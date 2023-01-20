@@ -1,0 +1,47 @@
+version: '3'
+services:
+  pulsar:
+    image: apachepulsar/pulsar:2.11.0
+    hostname: pulsar
+    container_name: pulsar
+    ports:
+      - "6650:6650"
+      - "8080:8080"
+    command: bash -c "bin/pulsar standalone && bin/pulsar-admin topics create-partitioned-topic apache-pulsar-sample-events -p 1"
+    restart: always
+    volumes:
+      - pulsardata:/pulsar/data
+      - pulsarconf:/pulsar/conf
+  producer:
+    platform: linux/x86_64
+    depends_on:
+      - pulsar
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./producer
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./producer:/usr/app
+      - /usr/app/node_modules
+    environment:
+      - APACHE_PULSAR_URL=pulsar://pulsar:6650
+      - NODE_ENV=development
+  consumer:
+    platform: linux/x86_64
+    depends_on:
+      - pulsar
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./consumer
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./consumer:/usr/app
+      - /usr/app/node_modules
+    environment:
+      - APACHE_PULSAR_URL=pulsar://pulsar:6650
+      - NODE_ENV=development
+volumes:
+  pulsardata:
+  pulsarconf:

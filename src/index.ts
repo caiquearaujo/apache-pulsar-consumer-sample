@@ -1,4 +1,19 @@
-import 'module-alias/register';
+/* eslint-disable import/first */
+import moduleAlias from 'module-alias';
+import path from 'path';
+
+const src = path.resolve(__dirname, '..', 'src');
+const build = path.resolve(__dirname, '..', 'build');
+
+if (process.env.NODE_ENV === 'production') {
+	moduleAlias.addAliases({
+		'@': build,
+	});
+} else {
+	moduleAlias.addAliases({
+		'@': src,
+	});
+}
 
 import routes from '@/routes';
 import plugins from '@/server/plugins';
@@ -21,6 +36,16 @@ new ApiServer(options)
 				console.error(err);
 				process.exit(1);
 			});
+
+		process.on('SIGINT', async () => {
+			await server.stop();
+			process.exit(0);
+		});
+
+		process.on('SIGTERM', async () => {
+			await server.stop();
+			process.exit(0);
+		});
 	})
 	.catch(err => {
 		console.error('❌ Server has failed while starting');
